@@ -1,0 +1,507 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>blocking_statistica.htm</title>
+<style type="text/css">
+    #lefty
+    {
+        margin: 3px;
+        background-color: white;
+        height: 99%;
+		width: 250px;
+		overflow: auto;
+		white-space: nowrap;
+    }
+    #righty
+    {
+        height: 99%;
+        border-left: solid black 2px;
+    }
+
+    #leftdiv
+    {
+      background-color: white;
+      overflow: auto;
+      white-space: nowrap;
+      height: 100%;
+      width: 20%;
+      position: fixed;
+    }
+    
+    #rightdiv
+    {
+      overflow: auto;
+      height: 100%;
+      position: fixed;
+    }
+    
+    #sizerdiv
+    {
+       background-color: silver;
+       height: 100%;
+       width: 5px;
+       position: fixed;
+       cursor: w-resize;
+    }    
+
+    #myiframe
+    {
+        height: 99%;
+        width: 99%;
+    }
+    body
+    {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+    }
+    .child
+    {
+        margin-left: 33px;
+		/*border: solid 1px blue;*/
+    }
+    .parent
+    {
+       margin-left: 24px;
+		/*border: solid red 1px;*/
+    }
+    
+    #mytable
+    {
+        width: 99%;
+        height: 99%;
+    }
+    #leftcell
+    {
+        width: 250px;
+		 height: 99%;
+    }
+    #rightcell
+    {
+        /*width: 100%;*/
+		height: 99%;
+    }
+	#root
+	{
+		/*border: dotted 1px green;*/
+	}
+</style>
+<script type="text/javascript">
+	var last_element = null
+	
+	function get_content_area()
+	{
+		var o = document.getElementById("rightdiv")
+		if (o != null) return o
+
+		return document.getElementById("righty")
+	}
+	
+	function is_child_of(child, parent)
+	{
+		if (parent == null)
+			return false
+		
+		while (child != null)
+		{
+			if (child.parentNode == parent)
+				return true
+			
+			child = child.parentNode
+		}
+		
+		return false
+	}
+	function hilite_item(src)
+	{
+		if (last_element != null)
+		{
+			last_element.style.backgroundColor = ""
+		}
+        src.style.backgroundColor = "silver"
+		last_element = src
+	}
+
+    function handle_graph(evt, src, g)
+    {
+		hilite_item(src)
+        get_content_area().innerHTML = "<img src=\"" + g + "\">"
+        evt.cancelBubble = true
+    }
+    
+    function handle_spreadsheet(evt, src, ss)
+    {
+		hilite_item(src)
+        var s = "<iframe id='myiframe' src=\"" + ss + "\"><\/iframe>"
+        get_content_area().innerHTML = s
+        evt.cancelBubble = true
+    }
+	function handle_folder(evt, src)
+	{
+		hilite_item(src)
+		get_content_area().innerHTML = ""
+		evt.cancelBubble = true
+	}
+	
+	function get_attrs(src)
+	{
+		var s = ""
+		var l = src.attributes.length
+		for (var i = 0; i < l; ++i)
+		{
+			var attr = src.attributes[i]
+			s += attr.name + " :  " + attr.value + "<br/>"
+		}
+		return s
+	}
+
+	function handle_expand(evt, src)
+	{
+		alert("expand")
+	}
+	function handle_collapse(evt, src)
+	{
+		evt.cancelBubble = true
+		var parentNode = src.parentNode
+		//get_content_area().innerHTML = get_attrs(src)
+		var srcName = src.src
+		if (srcName.indexOf("minus.gif") != -1)
+		{
+			srcName = srcName.replace(/minus\.gif/, "plus.gif")
+
+			if (is_child_of(last_element, parentNode))
+			{
+				var spans = parentNode.getElementsByTagName("span")
+				hilite_item(spans[0])
+				
+			}
+			var elems = parentNode.getElementsByTagName("DIV")
+			for (var i = 0; i < elems.length; ++i)
+			{
+				var elem = elems[i]
+				if (elem.parentNode == parentNode)
+					elem.style.display = "none"
+			}
+		}
+		else
+		{
+			srcName = srcName.replace(/plus\.gif/, "minus.gif")
+
+			var elems = parentNode.getElementsByTagName("DIV")
+			for (var i = 0; i < elems.length; ++i)
+			{
+				var elem = elems[i]
+				if (elem.parentNode == parentNode)
+					elem.style.display = ""
+			}
+		}
+		src.src = srcName
+	}
+
+	function unrenderable(evt, src)
+	{
+		hilite_item(src)
+		get_content_area().innerHTML = "Cannot render item in web page"
+	}
+	
+	function dump_test_item()
+	{
+		get_content_area().innerHTML = get_attrs(document.getElementById("testitem"))
+	}
+   
+    //global variable used for splitter bar status 
+    var mouseStatus='up';
+   
+    function drag_start()
+    {
+        mouseStatus = 'down';
+        var myiframe = document.getElementById('myiframe');
+        if (myiframe != null)
+            myiframe.style.display = 'none';
+    }
+   
+    function drag_move(evt)
+    {
+        if (mouseStatus == 'down')
+        {
+            resize_divs(evt.clientX - 3);
+        }
+    }
+    
+    function drag_end()
+    {
+        if (mouseStatus == 'down')
+        {
+            mouseStatus = 'up';
+            var myiframe = document.getElementById('myiframe');
+            if (myiframe != null)
+                myiframe.style.display = '';
+        }
+    }
+    
+    function resize_divs(leftDivWidth)
+    {
+        var maxWidth = window.document.body.clientWidth;
+        
+        if (leftDivWidth == null) // will be undefined when called by onresize event
+        {
+            leftDivWidth = document.getElementById('leftdiv').offsetWidth;            
+        }
+        
+        if (leftDivWidth < 20)
+            leftDivWidth = 20;
+        if (leftDivWidth > maxWidth - 20)
+            leftDivWidth = maxWidth - 20;
+        
+        var sizerdiv = document.getElementById('sizerdiv');
+        document.getElementById('leftdiv').style.width=leftDivWidth+'px';
+        sizerdiv.style.left=leftDivWidth+1+'px';
+        document.getElementById('rightdiv').style.left=leftDivWidth+sizerdiv.offsetWidth+1+'px';
+        document.getElementById('rightdiv').style.width = (maxWidth - leftDivWidth - sizerdiv.offsetWidth - 1)+'px';
+    }   
+</script>
+</head>
+<body onmousemove='drag_move(event)' onmouseup='drag_end()' onload='resize_divs()' onresize='resize_divs()'>
+<div id='leftdiv'>
+<div id='root'><span onclick='handle_folder(event, this)'><img src='blocking_statistica_files/folder.gif' />&nbsp;blocking_statistica.htm</span></div><div class='parent'><img src='blocking_statistica_files/minus.gif' onclick='handle_collapse(event, this)' /><span onclick="handle_folder(event, this)" title='Blocking Classic-VT'>
+&nbsp;<img src='blocking_statistica_files/folder.gif' />&nbsp;Blocking Classic-VT</span>
+<div class='child'>
+<span onclick="handle_spreadsheet(event, this, 'blocking_statistica_files/ss1.htm')" title='T-tests; Grouping: group (ALL_blocking)'>
+&nbsp;<img src='blocking_statistica_files/ss.gif' />&nbsp;T-tests; Grouping: group (ALL_blocking)</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph1.png')" title='Box & Whisker Plot:  elapsed'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:  elapsed</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph2.png')" title='Box & Whisker Plot:  Latency'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:  Latency</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph3.png')" title='Box & Whisker Plot: IdleTime'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot: IdleTime</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph4.png')" title='Box & Whisker Plot:  Connect'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:  Connect</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph5.png')" title='Box & Whisker Plot:     time'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:     time</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph6.png')" title='Box & Whisker Plot:      mem'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:      mem</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph7.png')" title='Box & Whisker Plot:      cpu'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:      cpu</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph8.png')" title='Categ. Normal P-Plot:  elapsed'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:  elapsed</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph9.png')" title='Categ. Normal P-Plot:  Latency'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:  Latency</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph10.png')" title='Categ. Normal P-Plot: IdleTime'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot: IdleTime</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph11.png')" title='Categ. Normal P-Plot:  Connect'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:  Connect</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph12.png')" title='Categ. Normal P-Plot:     time'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:     time</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph13.png')" title='Categ. Normal P-Plot:      mem'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:      mem</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph14.png')" title='Categ. Normal P-Plot:      cpu'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:      cpu</span>
+</div></div><div class='parent'><img src='blocking_statistica_files/minus.gif' onclick='handle_collapse(event, this)' /><span onclick="handle_folder(event, this)" title='Blocking Classic-Reactive'>
+&nbsp;<img src='blocking_statistica_files/folder.gif' />&nbsp;Blocking Classic-Reactive</span>
+<div class='child'>
+<span onclick="handle_spreadsheet(event, this, 'blocking_statistica_files/ss2.htm')" title='T-tests; Grouping: group (ALL_blocking)'>
+&nbsp;<img src='blocking_statistica_files/ss.gif' />&nbsp;T-tests; Grouping: group (ALL_blocking)</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph15.png')" title='Box & Whisker Plot:  elapsed'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:  elapsed</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph16.png')" title='Box & Whisker Plot:  Latency'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:  Latency</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph17.png')" title='Box & Whisker Plot: IdleTime'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot: IdleTime</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph18.png')" title='Box & Whisker Plot:  Connect'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:  Connect</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph19.png')" title='Box & Whisker Plot:     time'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:     time</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph20.png')" title='Box & Whisker Plot:      mem'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:      mem</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph21.png')" title='Box & Whisker Plot:      cpu'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:      cpu</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph22.png')" title='Categ. Normal P-Plot:  elapsed'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:  elapsed</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph23.png')" title='Categ. Normal P-Plot:  Latency'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:  Latency</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph24.png')" title='Categ. Normal P-Plot: IdleTime'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot: IdleTime</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph25.png')" title='Categ. Normal P-Plot:  Connect'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:  Connect</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph26.png')" title='Categ. Normal P-Plot:     time'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:     time</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph27.png')" title='Categ. Normal P-Plot:      mem'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:      mem</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph28.png')" title='Categ. Normal P-Plot:      cpu'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:      cpu</span>
+</div></div><div class='parent'><img src='blocking_statistica_files/minus.gif' onclick='handle_collapse(event, this)' /><span onclick="handle_folder(event, this)" title='Blocking  VT-Reactive'>
+&nbsp;<img src='blocking_statistica_files/folder.gif' />&nbsp;Blocking  VT-Reactive</span>
+<div class='child'>
+<span onclick="handle_spreadsheet(event, this, 'blocking_statistica_files/ss3.htm')" title='T-tests; Grouping: group (ALL_blocking)'>
+&nbsp;<img src='blocking_statistica_files/ss.gif' />&nbsp;T-tests; Grouping: group (ALL_blocking)</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph29.png')" title='Box & Whisker Plot:  elapsed'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:  elapsed</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph30.png')" title='Box & Whisker Plot:  Latency'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:  Latency</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph31.png')" title='Box & Whisker Plot: IdleTime'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot: IdleTime</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph32.png')" title='Box & Whisker Plot:  Connect'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:  Connect</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph33.png')" title='Box & Whisker Plot:     time'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:     time</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph34.png')" title='Box & Whisker Plot:      mem'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:      mem</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph35.png')" title='Box & Whisker Plot:      cpu'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Box & Whisker Plot:      cpu</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph36.png')" title='Categ. Normal P-Plot:  elapsed'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:  elapsed</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph37.png')" title='Categ. Normal P-Plot:  Latency'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:  Latency</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph38.png')" title='Categ. Normal P-Plot: IdleTime'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot: IdleTime</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph39.png')" title='Categ. Normal P-Plot:  Connect'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:  Connect</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph40.png')" title='Categ. Normal P-Plot:     time'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:     time</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph41.png')" title='Categ. Normal P-Plot:      mem'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:      mem</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph42.png')" title='Categ. Normal P-Plot:      cpu'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Categ. Normal P-Plot:      cpu</span>
+</div></div><div class='parent'><img src='blocking_statistica_files/minus.gif' onclick='handle_collapse(event, this)' /><span onclick="handle_folder(event, this)" title='Basic Statistics/Tables (ALL_blocking)'>
+&nbsp;<img src='blocking_statistica_files/folder.gif' />&nbsp;Basic Statistics/Tables (ALL_blocking)</span>
+<div class='parent'><img src='blocking_statistica_files/minus.gif' onclick='handle_collapse(event, this)' /><span onclick="handle_folder(event, this)" title='Descriptive statistics dialog'>
+&nbsp;<img src='blocking_statistica_files/folder.gif' />&nbsp;Descriptive statistics dialog</span>
+<div class='parent'><img src='blocking_statistica_files/minus.gif' onclick='handle_collapse(event, this)' /><span onclick="handle_folder(event, this)" title='All Groups'>
+&nbsp;<img src='blocking_statistica_files/folder.gif' />&nbsp;All Groups</span>
+<div class='child'>
+<span onclick="handle_spreadsheet(event, this, 'blocking_statistica_files/ss4.htm')" title='Descriptive Statistics (ALL_blocking)'>
+&nbsp;<img src='blocking_statistica_files/ss.gif' />&nbsp;Descriptive Statistics (ALL_blocking)</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph43.png')" title='Summary: elapsed'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: elapsed</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph44.png')" title='Summary: Latency'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: Latency</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph45.png')" title='Summary: Connect'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: Connect</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph46.png')" title='Summary: time'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: time</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph47.png')" title='Summary: mem'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: mem</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph48.png')" title='Summary: cpu'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: cpu</span>
+</div></div><div class='parent'><img src='blocking_statistica_files/minus.gif' onclick='handle_collapse(event, this)' /><span onclick="handle_folder(event, this)" title='Classic'>
+&nbsp;<img src='blocking_statistica_files/folder.gif' />&nbsp;Classic</span>
+<div class='child'>
+<span onclick="handle_spreadsheet(event, this, 'blocking_statistica_files/ss5.htm')" title='Descriptive Statistics (ALL_blocking)'>
+&nbsp;<img src='blocking_statistica_files/ss.gif' />&nbsp;Descriptive Statistics (ALL_blocking)</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph49.png')" title='Summary: elapsed'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: elapsed</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph50.png')" title='Summary: Latency'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: Latency</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph51.png')" title='Summary: Connect'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: Connect</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph52.png')" title='Summary: time'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: time</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph53.png')" title='Summary: mem'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: mem</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph54.png')" title='Summary: cpu'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: cpu</span>
+</div></div><div class='parent'><img src='blocking_statistica_files/minus.gif' onclick='handle_collapse(event, this)' /><span onclick="handle_folder(event, this)" title='VT'>
+&nbsp;<img src='blocking_statistica_files/folder.gif' />&nbsp;VT</span>
+<div class='child'>
+<span onclick="handle_spreadsheet(event, this, 'blocking_statistica_files/ss6.htm')" title='Descriptive Statistics (ALL_blocking)'>
+&nbsp;<img src='blocking_statistica_files/ss.gif' />&nbsp;Descriptive Statistics (ALL_blocking)</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph55.png')" title='Summary: elapsed'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: elapsed</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph56.png')" title='Summary: Latency'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: Latency</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph57.png')" title='Summary: Connect'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: Connect</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph58.png')" title='Summary: time'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: time</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph59.png')" title='Summary: mem'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: mem</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph60.png')" title='Summary: cpu'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: cpu</span>
+</div></div><div class='parent'><img src='blocking_statistica_files/minus.gif' onclick='handle_collapse(event, this)' /><span onclick="handle_folder(event, this)" title='Reactive'>
+&nbsp;<img src='blocking_statistica_files/folder.gif' />&nbsp;Reactive</span>
+<div class='child'>
+<span onclick="handle_spreadsheet(event, this, 'blocking_statistica_files/ss7.htm')" title='Descriptive Statistics (ALL_blocking)'>
+&nbsp;<img src='blocking_statistica_files/ss.gif' />&nbsp;Descriptive Statistics (ALL_blocking)</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph61.png')" title='Summary: elapsed'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: elapsed</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph62.png')" title='Summary: Latency'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: Latency</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph63.png')" title='Summary: Connect'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: Connect</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph64.png')" title='Summary: time'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: time</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph65.png')" title='Summary: mem'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: mem</span>
+</div><div class='child'>
+<span onclick="handle_graph(event, this, 'blocking_statistica_files/graph66.png')" title='Summary: cpu'>
+&nbsp;<img src='blocking_statistica_files/graph.gif' />&nbsp;Summary: cpu</span>
+</div></div></div></div></div>
+<div id='sizerdiv' onmousedown='drag_start();'></div><div id='rightdiv'></div>
+</body>
+</html>
